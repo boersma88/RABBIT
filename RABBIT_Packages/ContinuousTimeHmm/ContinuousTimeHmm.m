@@ -174,12 +174,12 @@ CtPathSampling[startProb_, tranProbSeq_, dataProbSeq_, size_:1] :=
             res[[All, t]] = RandomChoice[# -> states] & /@ weights, {t,nSeq - 1, 1, -1}];
         {CtLogLiklihood[forwardScale], res}
     ]
-
-CtDiscreteFormat[x_?(ArrayQ[#, 2] &)] :=
-    Flatten[ConstantArray[#[[2]], #[[1]]] & /@ 
-      Transpose[{Differences[x[[All, 1]]], x[[;; -2, 2]]}]]    
+      
+CtDiscreteFormat[x_List] := 
+ Flatten[ConstantArray[#[[2]], #[[1]]] & /@ 
+   Transpose[{Differences[x[[All, 1]]], x[[;; -2, 2]]}], 1]      
           
-CtJumpFormat[x_?(ArrayQ[#, 1] &)] :=
+CtJumpFormat[x_List] :=
     Module[ {ls},
         ls = {Length[#], #[[1]]} & /@ Split[x];
         ls[[All, 1]] = Prepend[Most[Accumulate[ls[[All, 1]]]] + 1, 1];
@@ -189,7 +189,7 @@ CtJumpFormat[x_?(ArrayQ[#, 1] &)] :=
 CtJumpFormat[x_String, delimiter_String: "-"] :=
     Partition[Append[ToExpression[StringSplit[x, delimiter]], Null], 2]
  
-CtStringFormat[jumpPath_?(ArrayQ[#, 2] &), delimiter_String: "-"] :=
+CtStringFormat[jumpPath_List, delimiter_String: "-"] :=
     StringJoin[Riffle[ToString[#] & /@ Most[Flatten[jumpPath]], delimiter]]      
         
 CtProbPlot[timeseq_?(VectorQ[#, NumericQ] &),array_?(ArrayQ[#, 2, NumericQ] &), rectcolor_] :=
