@@ -7,8 +7,8 @@ Mathematica package for Reconstructing genome Ancestry Blocks BIT by BIT in mapp
 ##Getting started
 ##
 
-1. Clone in Desktop or Download ZIP and unzip it. 
+1. Clone in Desktop or Download ZIP. 
 
-2. Set path to the folder "RABBIT_Packages" and Needs["MagicReconstruct`"]
+2. Set path to the folder "RABBIT_Packages" and Needs["MagicReconstruct`"].
 
-3. Go through interactive notebook "MagicReconstruct_Tutorial.nb" or "MagicReconstruct_Tutorial.cdf"
+3. Go through "MagicReconstruct_Tutorial.nb" or "MagicReconstruct_Tutorial.cdf" in the folder "RABBIT_Tutorial".
