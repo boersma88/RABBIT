@@ -23,7 +23,7 @@ checkgeneticmap[magicSNP_] :=
             True,
             Print["The genetic distances must be strictly increasing on chromosomes ", ls2];
             False
-            ]
+        ]
     ]
 
 checkfounderSNP[magicSNP_] :=
@@ -56,32 +56,36 @@ checksampleSNP[magicSNP_] :=
         posX = Flatten[Position[chrs, "X"]];
         posA = Complement[Range[Length[chrs]], posX];
         geno = SplitBy[Transpose[Join[magicSNP[[{3}, 2 ;;]], magicSNP[[5 + nfounder ;;, 2 ;;]]]], First];
-        ls = Transpose[Transpose[#] & /@ geno[[posA, All, 2 ;;]]];
-        ls = Map[ToString, Union[Flatten[#]] & /@ ls, {2}];
-        ls = Complement[#, {"NN", "N1", "1N", "N2", "2N", "11", "12", "21", "22"}] & /@ ls;
-        pos = Flatten[Position[ls, _?(# =!= {} &), {1}, Heads -> False]];
-        If[ pos =!= {},
-            Print["The genotypes for sampled individuals on autosomals must be ", {"NN", "N1", "1N", "N2", "2N", "11", "12", "21", "22"}, ".\n", 
-             "The following sampled individuals have illegal genotypes: \n", 
-             Join[{{"Sampled individual", "Illegal genotypes"}}, 
-               Transpose[{magicSNP[[5 + nfounder ;;, 1]][[pos]], ls[[pos]]}]] //TableForm];
-            res = False;
+        If[ posA=!={},
+            ls = Transpose[Transpose[#] & /@ geno[[posA, All, 2 ;;]]];
+            ls = Map[ToString, Union[Flatten[#]] & /@ ls, {2}];
+            ls = Complement[#, {"NN", "N1", "1N", "N2", "2N", "11", "12", "21", "22"}] & /@ ls;
+            pos = Flatten[Position[ls, _?(# =!= {} &), {1}, Heads -> False]];
+            If[ pos =!= {},
+                Print["The genotypes for sampled individuals on autosomals must be ", {"NN", "N1", "1N", "N2", "2N", "11", "12", "21", "22"}, ".\n", 
+                 "The following sampled individuals have illegal genotypes: \n", 
+                 Join[{{"Sampled individual", "Illegal genotypes"}}, 
+                   Transpose[{magicSNP[[5 + nfounder ;;, 1]][[pos]], ls[[pos]]}]] //TableForm];
+                res = False;
+            ];
         ];
-        ls = Transpose[Transpose[#] & /@ geno[[posX, All, 2 ;;]]];
-        ls = Map[ToString, Union[Flatten[#]] & /@ ls, {2}];
-        ls1 = Complement[#, {"NN", "N1", "1N", "N2", "2N", "11", "12", "21",
-               "22"}] === {} & /@ ls;
-        ls2 = Complement[#, {"N", "1", "2"}] === {} & /@ ls;
-        pos = Flatten[Position[MapThread[Or, {ls1, ls2}], False]];
-        If[ pos =!= {},
-            Print["The genotypes on female XX chromsomes must be ", {"NN", 
-              "N1", "1N", "N2", "2N", "11", "12", "21", "22"}, ".\n", 
-             "The haplotypes on male X chromsomes must be ", {"N", "1", "2"}, 
-             ".\n", 
-             "The following sampled individuals have illegal genotypes on X chromosomes: \n", 
-             Join[{{"Sampled individual", "Illegal genotypes"}}, 
-               Transpose[{magicSNP[[5 + nfounder ;;, 1]][[pos]], ls[[pos]]}]] //TableForm];
-            res = False;
+        If[ posX=!={},
+            ls = Transpose[Transpose[#] & /@ geno[[posX, All, 2 ;;]]];
+            ls = Map[ToString, Union[Flatten[#]] & /@ ls, {2}];
+            ls1 = Complement[#, {"NN", "N1", "1N", "N2", "2N", "11", "12", "21",
+                   "22"}] === {} & /@ ls;
+            ls2 = Complement[#, {"N", "1", "2"}] === {} & /@ ls;
+            pos = Flatten[Position[MapThread[Or, {ls1, ls2}], False]];
+            If[ pos =!= {},
+                Print["The genotypes on female XX chromsomes must be ", {"NN", 
+                  "N1", "1N", "N2", "2N", "11", "12", "21", "22"}, ".\n", 
+                 "The haplotypes on male X chromsomes must be ", {"N", "1", "2"}, 
+                 ".\n", 
+                 "The following sampled individuals have illegal genotypes on X chromosomes: \n", 
+                 Join[{{"Sampled individual", "Illegal genotypes"}}, 
+                   Transpose[{magicSNP[[5 + nfounder ;;, 1]][[pos]], ls[[pos]]}]] //TableForm];
+                res = False;
+            ];
         ];
         res
     ]
