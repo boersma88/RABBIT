@@ -318,7 +318,7 @@ saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
            {{key, "Conditonal genotype probability"}}, genoprob2,
            {{key, "haplotypes in order"}}, haplotypes2,
            {{key, "Conditonal haplotype probability"}}, haploprob2];
-         Export[summaryFile, summary, "CSV"],
+         Export[summaryFile, ExportString[summary, "CSV"], "Table"],
          "origViterbiDecoding",
          path = res[[2 ;;, All, 2]];
          If[ model === "depModel",
@@ -336,7 +336,7 @@ saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
                                                                  "haplotypes",
                                                                  "diplotypes"
                                                              ]}}, path];
-         Export[summaryFile, summary, "CSV"],
+         Export[summaryFile, ExportString[summary, "CSV"], "Table"],
          "origPathSampling",
          path = res[[2 ;;, All, 2]];
          If[ model === "depModel",
@@ -356,16 +356,34 @@ saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
                                                                   "haplotypes",
                                                                   "diplotypes"
                                                               ]}}, path];
-         Export[summaryFile, summary, "CSV"],
+         Export[summaryFile, ExportString[summary, "CSV"], "Table"],
          _,
          Print["Wrong " <> resultFile <> "!"];
          Abort[]
          ]
     ]    
 
+(*http://stackoverflow.com/questions/7525782/import-big-files-arrays-with-mathematica*)
+readTable[file_String?FileExistsQ, format_String, chunkSize_: 1000] :=
+    Module[ {stream, dataChunk, result, linkedList, add},
+        SetAttributes[linkedList, HoldAllComplete];
+        add[ll_, value_] := linkedList[ll, value];
+        stream = StringToStream[Import[file, "String"]];
+        Internal`WithLocalSettings[Null,(*main code*)
+            result = linkedList[];
+            While[dataChunk =!= {}, 
+             dataChunk = ImportString[StringJoin[Riffle[ReadList[stream, "String", chunkSize], "\n"]], format];
+             result = add[result, dataChunk];
+            ];
+            result = Flatten[result, Infinity, linkedList],(*clean-up*)
+         Close[stream]
+         ];
+        Join @@ result
+    ]
+    
 getSummaryMR[summaryFile_String?FileExistsQ] := 
  Module[{res, description,key="MagicReconstruct-Summary"},
-  res = Import[summaryFile, "CSV"];
+  res = readTable[summaryFile, "CSV"];
   res = Partition[Split[res, #1[[1]] != key && #2[[1]] != key &], 2];
   description = Flatten[#] & /@ res[[All, 1]];
   res = Join[{description}, res[[All, 2]]];
