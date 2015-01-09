@@ -206,7 +206,7 @@ transformGeno[geno_] :=
     
 transformMagicSNP[magicSNP_List] :=
     Module[ {snpMap, founderData, obsData,founderid,sampleid,deltd,founderHaplo,obsGeno,nFounder,chrs,posX,posA,genders},
-        nFounder = Last[magicSNP[[1]]];
+        nFounder = magicSNP[[1,2]];
         snpMap = Transpose[magicSNP[[2 ;; 4]]];
         founderData = Join[magicSNP[[2;;3]],magicSNP[[5 ;; 4 + nFounder]]];
         obsData = Join[magicSNP[[2;;3]],magicSNP[[5 + nFounder ;;]]];
