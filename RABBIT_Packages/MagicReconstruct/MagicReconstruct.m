@@ -213,7 +213,9 @@ transformMagicSNP[magicSNP_List] :=
         founderid = ToString[#]&/@founderData[[3 ;;, 1]];
         sampleid = ToString[#]&/@obsData[[3 ;;, 1]];
         (*change the genetic distance from centiMorgan into Morgan*)
-        deltd = 0.01 (Differences[#] & /@ (SplitBy[snpMap[[2 ;;, 2 ;;]], First][[All, All, 2]]));
+        deltd = Differences[#] & /@ (SplitBy[snpMap[[2 ;;, 2 ;;]], First][[All, All, 2]]);
+        (*change the genetic distance from centiMorgan into Morgan*)
+        deltd = 0.01 deltd;         
         founderHaplo = transformGeno[founderData];
         obsGeno = transformGeno[obsData];
         (*extract posA and posX*)
