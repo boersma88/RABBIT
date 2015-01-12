@@ -131,7 +131,7 @@ magicReconstruct[magicSNP_List,model_String, epsF_?NumericQ, eps_?NumericQ,
             Message[magicReconstruct::wrongMethod];
             Return[$Failed]
         ];
-        SNPValidation[magicSNP];        
+        SNPValidation[magicSNP];
         If[ isprint,
             starttime = TimeUsed[];
             Print["Start date =",DateString[]];
@@ -145,7 +145,7 @@ magicReconstruct[magicSNP_List,model_String, epsF_?NumericQ, eps_?NumericQ,
         startProb = tranProb = Table[0,{Length[posA]+Length[posX]}];
         If[ posA=!={},
             {startProb[[posA]], tranProb[[posA]]} = {startProbAutosome, tranProbAutosome};
-        ];        
+        ];
         Put[{model,epsF, eps, matingScheme,algorithmname,genders,posA,posX,founderid,sampleid,snpMap}, outputfile];
         Quiet[Close[outputfile]];
         outstream = OpenAppend[outputfile];
@@ -215,7 +215,7 @@ transformMagicSNP[magicSNP_List] :=
         (*change the genetic distance from centiMorgan into Morgan*)
         deltd = Differences[#] & /@ (SplitBy[snpMap[[2 ;;, 2 ;;]], First][[All, All, 2]]);
         (*change the genetic distance from centiMorgan into Morgan*)
-        deltd = 0.01 deltd;         
+        deltd = 0.01 deltd;
         founderHaplo = transformGeno[founderData];
         obsGeno = transformGeno[obsData];
         (*extract posA and posX*)
@@ -258,27 +258,36 @@ calOrigLogl[magicSNP_List, model_String, epsF_?NumericQ,
 
 calOrigGeneration[magicSNP_List, model_String, epsF_?NumericQ, 
   eps_?NumericQ, Fmin_Integer, matingSchemeMax_?(VectorQ[#, StringQ] &)] :=
-    Module[ {Fmax, ggls, loglls, lls,nFounder,id,i},
-        Fmax = Length[matingSchemeMax];
-        ggls = Range[Fmin, Fmax];
+    Module[ {Fmax, schemelist,i,lls},
+    	Fmax = Length[matingSchemeMax];
+    	schemelist = Table[Take[matingSchemeMax, i], {i, Fmin, Fmax}];    	
+        lls=calOrigGeneration[magicSNP, model, epsF, eps, schemelist];    
+        lls[[All, 2, 1]] = "Generation";
+        lls[[All, 3 ;;, 1]] += Fmin - 1;
+        lls    
+    ]
+
+calOrigGeneration[magicSNP_List, model_String, epsF_?NumericQ, 
+  eps_?NumericQ, schemelist_?(VectorQ[#, ListQ] &)] :=
+    Module[ {loglls, lls, nFounder, id, i},        
         Monitor[
-            loglls = Table[calOrigLogl[magicSNP, model, epsF, eps,Take[matingSchemeMax, ggls[[i]]]], {i,Length[ggls]}];
-            ,ProgressIndicator[i, {1, Length[ggls]}]];
+        	  loglls = Table[calOrigLogl[magicSNP, model, epsF, eps, schemelist[[i]]], {i, Length[schemelist]}], 
+   			  ProgressIndicator[i, {1, Length[schemelist]}]];
         lls = Normalize[Exp[# - Max[#]], Total] & /@ Transpose[loglls];
-        lls = Sort[Transpose[{ggls, #}], #1[[2]] > #2[[2]] &] & /@ lls;
+        lls = Sort[Transpose[{Range[Length[schemelist]], #}], #1[[2]] > #2[[2]] &] & /@ lls;
         nFounder = magicSNP[[1, 2]];
         id = magicSNP[[nFounder + 5 ;;, 1]];
-        lls = Transpose[Join[{id, Table[{"Generation", "PosteriorProb"}, {Length[id]}]},Transpose[lls]]];
+        lls = Transpose[Join[{id, Table[{"SchemeIndex", "PosteriorProb"}, {Length[id]}]}, Transpose[lls]]];
         lls
     ]
   
 saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
     Module[ {res, model, epsF, eps, matingScheme,genders, posA, posX, nFounder, algorithmname, chrid,logl,logl2,
       founderid, sampleid, snpmap, genotypes, diplotypes, genoID, genotypes2, haploID, haplotypes2, 
-      genoprob, haploprob, rowID, genoprob2, haploprob2, diploID, diplotypes2, path, summary, diplotohaplo,key="MagicReconstruct-Summary"},
+      genoprob, haploprob, rowID, genoprob2, haploprob2, diploID, diplotypes2, path, summary, diplotohaplo,key = "MagicReconstruct-Summary"},
         res = ReadList[resultFile];
-        {model,epsF, eps, matingScheme,algorithmname,genders,posA,posX,founderid,sampleid,snpmap}=res[[1]];
-        nFounder=Length[founderid];
+        {model,epsF, eps, matingScheme,algorithmname,genders,posA,posX,founderid,sampleid,snpmap} = res[[1]];
+        nFounder = Length[founderid];
         {genotypes, diplotypes} = origGenotypes[nFounder][[1]];
         diplotohaplo = Replace[diplotypes, {{x_, x_} :> x, {_, _} -> 0}, {1}];
         haploID = "haplotype" <> ToString[#] & /@ Range[nFounder];
@@ -331,13 +340,13 @@ saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
          path = Join[{{"Lines", "ViterbiPath"}}, Transpose[{sampleid, path}]];
          (*export*)
          summary = Join[{{key,"Genetic map of biallelic markers"}}, snpmap, 
-         	{{key, "Ln marginal likelihood"}}, logl2,
-         	{{key, "haplotypes in order"}}, haplotypes2,
-         	{{key, "diplotypes in order"}}, diplotypes2,
+             {{key, "Ln marginal likelihood"}}, logl2,
+             {{key, "haplotypes in order"}}, haplotypes2,
+             {{key, "diplotypes in order"}}, diplotypes2,
            {{key, "Viterbi path of "<>If[ model === "depModel",
-                                                                 "haplotypes",
-                                                                 "diplotypes"
-                                                             ]}}, path];
+                                          "haplotypes",
+                                          "diplotypes"
+                                      ]}}, path];
          Export[summaryFile, ExportString[summary, "CSV"], "Table"],
          "origPathSampling",
          path = res[[2 ;;, All, 2]];
@@ -355,9 +364,9 @@ saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
            {{key, "haplotypes in order"}}, haplotypes2,
            {{key, "diplotypes in order"}}, diplotypes2,
            {{key, "Sampled paths of "<>If[ model === "depModel",
-                                                                  "haplotypes",
-                                                                  "diplotypes"
-                                                              ]}}, path];
+                                           "haplotypes",
+                                           "diplotypes"
+                                       ]}}, path];
          Export[summaryFile, ExportString[summary, "CSV"], "Table"],
          _,
          Print["Wrong " <> resultFile <> "!"];
@@ -369,7 +378,8 @@ saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
 readTable[file_String?FileExistsQ, format_String, chunkSize_: 1000] :=
     Module[ {stream, dataChunk, result, linkedList, add},
         SetAttributes[linkedList, HoldAllComplete];
-        add[ll_, value_] := linkedList[ll, value];
+        add[ll_, value_] :=
+            linkedList[ll, value];
         stream = StringToStream[Import[file, "String"]];
         Internal`WithLocalSettings[Null,(*main code*)
             result = linkedList[];
@@ -383,14 +393,14 @@ readTable[file_String?FileExistsQ, format_String, chunkSize_: 1000] :=
         Join @@ result
     ]
     
-getSummaryMR[summaryFile_String?FileExistsQ] := 
- Module[{res, description,key="MagicReconstruct-Summary"},
-  res = readTable[summaryFile, "CSV"];
-  res = Partition[Split[res, #1[[1]] != key && #2[[1]] != key &], 2];
-  description = Flatten[#] & /@ res[[All, 1]];
-  res = Join[{description}, res[[All, 2]]];
-  res
-  ]
+getSummaryMR[summaryFile_String?FileExistsQ] :=
+    Module[ {res, description,key = "MagicReconstruct-Summary"},
+        res = readTable[summaryFile, "CSV"];
+        res = Partition[Split[res, #1[[1]] != key && #2[[1]] != key &], 2];
+        description = Flatten[#] & /@ res[[All, 1]];
+        res = Join[{description}, res[[All, 2]]];
+        res
+    ]
      
 End[]
 
