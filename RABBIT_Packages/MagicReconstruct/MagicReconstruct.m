@@ -259,26 +259,32 @@ calOrigLogl[magicSNP_List, model_String, epsF_?NumericQ,
 calOrigGeneration[magicSNP_List, model_String, epsF_?NumericQ, 
   eps_?NumericQ, Fmin_Integer, matingSchemeMax_?(VectorQ[#, StringQ] &)] :=
     Module[ {Fmax, schemelist,i,lls},
-    	Fmax = Length[matingSchemeMax];
-    	schemelist = Table[Take[matingSchemeMax, i], {i, Fmin, Fmax}];    	
-        lls=calOrigGeneration[magicSNP, model, epsF, eps, schemelist];    
+        Fmax = Length[matingSchemeMax];
+        schemelist = Table[Take[matingSchemeMax, i], {i, Fmin, Fmax}];
+        lls = calOrigGeneration[magicSNP, model, epsF, eps, schemelist];
         lls[[All, 2, 1]] = "Generation";
         lls[[All, 3 ;;, 1]] += Fmin - 1;
-        lls    
+        lls
     ]
 
 calOrigGeneration[magicSNP_List, model_String, epsF_?NumericQ, 
-  eps_?NumericQ, schemelist_?(VectorQ[#, ListQ] &)] :=
-    Module[ {loglls, lls, nFounder, id, i},        
+  eps_?NumericQ, schemelist_?(VectorQ[#, ListQ] &),isSameGeneration_:False] :=
+    Module[ {loglls, lls, nFounder, id, i},
         Monitor[
-        	  loglls = Table[calOrigLogl[magicSNP, model, epsF, eps, schemelist[[i]]], {i, Length[schemelist]}], 
-   			  ProgressIndicator[i, {1, Length[schemelist]}]];
-        lls = Normalize[Exp[# - Max[#]], Total] & /@ Transpose[loglls];
-        lls = Sort[Transpose[{Range[Length[schemelist]], #}], #1[[2]] > #2[[2]] &] & /@ lls;
+              loglls = Table[calOrigLogl[magicSNP, model, epsF, eps, schemelist[[i]]], {i, Length[schemelist]}], 
+                 ProgressIndicator[i, {1, Length[schemelist]}]];
         nFounder = magicSNP[[1, 2]];
         id = magicSNP[[nFounder + 5 ;;, 1]];
-        lls = Transpose[Join[{id, Table[{"SchemeIndex", "PosteriorProb"}, {Length[id]}]}, Transpose[lls]]];
-        lls
+        If[ isSameGeneration,
+            lls = Total[loglls, {2}];
+            lls = Normalize[Exp[lls - Max[lls]], Total];
+            lls = Sort[
+              Transpose[{Range[Length[schemelist]], lls}], #1[[2]] > #2[[2]] &];
+            lls = Join[{{"SchemeIndex", "PosteriorProb"}}, lls],
+            lls = Normalize[Exp[# - Max[#]], Total] & /@ Transpose[loglls];
+            lls = Sort[Transpose[{Range[Length[schemelist]], #}], #1[[2]] > #2[[2]] &] & /@ lls;
+            lls = Transpose[Join[{id, Table[{"SchemeIndex", "PosteriorProb"}, {Length[id]}]}, Transpose[lls]]]
+        ]
     ]
   
 saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
