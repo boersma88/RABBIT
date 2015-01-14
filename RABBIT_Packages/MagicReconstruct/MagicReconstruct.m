@@ -287,6 +287,14 @@ calOrigGeneration[magicSNP_List, model_String, epsF_?NumericQ,
         ]
     ]
   
+csvExport[file_,list_] := Module[{ls,str},
+  ls = Riffle[StringReplace[ToString[#], {"{" | "}" -> ""}] & /@ list, "\n"];
+  Put[file];
+  str = OpenAppend[file];
+  WriteString[str, Sequence @@ ls];
+  Close[str];
+  ]
+    
 saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
     Module[ {res, model, epsF, eps, matingScheme,genders, posA, posX, nFounder, algorithmname, chrid,logl,logl2,
       founderid, sampleid, snpmap, genotypes, diplotypes, genoID, genotypes2, haploID, haplotypes2, 
@@ -316,6 +324,12 @@ saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
          algorithmname, 
          "origPosteriorDecoding",
          genoprob = toGenoprob[res[[2 ;;, All, 2]]];
+         (*geno2diplo = origGenotypes[nFounder][[2, 1]];
+         genoprob = res[[2 ;;, All, 2]];         
+         Do[
+           ls = Transpose[genoprob[[All, chr]], {2, 3, 1}];
+           genoprob[[All, chr]] = Transpose[Total[ls[[#]]] & /@ geno2diplo, {3, 1, 2}], {chr,Dimensions[genoprob][[2]]}];*)
+         ClearAll[res];
          haploprob = toHaploprob[genoprob];
          (*to output haplotypes2 and genotypes2,*)
          (*to output genoprob2 and haploprob2*)
@@ -335,9 +349,11 @@ saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
            {{key, "Conditonal genotype probability"}}, genoprob2,
            {{key, "haplotypes in order"}}, haplotypes2,
            {{key, "Conditonal haplotype probability"}}, haploprob2];
-         Export[summaryFile, ExportString[summary, "CSV"], "Table"],
+         (* Export[summaryFile, ExportString[summary, "CSV"], "Table"],*)
+         csvExport[summaryFile,summary],
          "origViterbiDecoding",
          path = res[[2 ;;, All, 2]];
+         ClearAll[res];
          If[ model === "depModel",
              path[[All, All, ;; -2, 2]] = Map[diplotohaplo[[#]] &, path[[All, All, ;; -2, 2]], {2}];
          ];
@@ -353,9 +369,11 @@ saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
                                           "haplotypes",
                                           "diplotypes"
                                       ]}}, path];
-         Export[summaryFile, ExportString[summary, "CSV"], "Table"],
+         (* Export[summaryFile, ExportString[summary, "CSV"], "Table"],*)
+         csvExport[summaryFile,summary],
          "origPathSampling",
          path = res[[2 ;;, All, 2]];
+         ClearAll[res];
          If[ model === "depModel",
              path[[All, All, All, ;; -2, 2]] = Map[diplotohaplo[[#]] &, path[[All, All, All, ;; -2, 2]], {3}];
          ];
@@ -373,7 +391,8 @@ saveAsSummaryMR[resultFile_String?FileExistsQ, summaryFile_String] :=
                                            "haplotypes",
                                            "diplotypes"
                                        ]}}, path];
-         Export[summaryFile, ExportString[summary, "CSV"], "Table"],
+         (* Export[summaryFile, ExportString[summary, "CSV"], "Table"],*)
+         csvExport[summaryFile,summary],
          _,
          Print["Wrong " <> resultFile <> "!"];
          Abort[]
